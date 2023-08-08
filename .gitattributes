@@ -1,0 +1,2 @@
+*.bash linguist-language=Bash
+*.yml linguist-language=Yml
