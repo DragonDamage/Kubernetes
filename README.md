@@ -5,6 +5,8 @@
 `Kubernetes` - это платформа управления контейнерами, которая позволяет автоматизировать развертывание, масштабирование и управление приложениями в контейнерах.
 Для управления контейнеризированными приложениями Kubernetes использует ряд различных сущностей, каждая из которых выполняет определенную роль в организации приложений и ресурсов.
 
+![Screenshot](Kubernetes_1.jpeg)
+
 #                                                                | Node |
 
 `Node` - это логическая коллекция IT-ресурсов, которая выполняет рабочие нагрузки для одного или нескольких контейнеров в кластере Kubernetes.
@@ -399,5 +401,123 @@ helm install myapp ./myapp-chart
 ```
 Это создаст релиз с именем `myapp`, используя `Helm Chart`, расположенный в директории `myapp-chart`.
 
+---
 
 
+# Kubernetes инструкция по оркестрированию:
+
+![Screenshot](Kubernetes_2.png)
+
+### :arrow_forward: Конфиги и остальное :arrow_backward:
+```bash
+$ sudo su dockeradm        # Пользак у которого есть конфигурация кубера (~/.kube/config)
+$ kubectl config view      # Посмотреть объединённые настройки kubeconfig
+```
+
+### :triangular_flag_on_post: Глоссарий :triangular_flag_on_post:
+| Команда | Описание |
+| :---: | :----: |
+| "-n" означает "--namespace" | *неймспейс* |
+| "-f" означает "--force"     | *в реальном времени* |
+| "-f" означает "--file"      | *может означать файл* |
+| -n ui [Space] ui-front      | *после пробела идет наименование пода* |
+| "--all-namespaces"          | *можно сократить до "-A"* |
+
+
+### :arrow_forward: Полезное :arrow_backward:
+```bash
+$ source <(kubectl completion bash)  # включаем автодополнение для текущего сеанса
+$ kubectl version    # Посмотреть версию Kubernetes
+$ ansible --version  # Посмотреть версию Ansible
+$ kubectl apply -f <filename>  # Для создания и обновления ресурсов # apply управляет приложениями с помощью файлов, которые определяют ресурсы Kubernetes
+$ KUBE_EDITOR="nano" kubectl edit svc/docker-registry    # Редактировать ресурс к примеру "сервис docker-registry"
+```
+
+### :arrow_forward: Работа с Kubelet :arrow_backward:
+```bash
+$ sudo systemctl status kubelet noda1.moscow.ne  # Посмотреть статус kubelet на ноде
+$ sudo systemctl restart kubelet    # Рестарт Ноды в которой находимся
+$ journalctl -u kubelet | tail -30  # Журнал службы kubelet
+$ systemctl start kubelet           # Запуск службы kubelet
+$ systemctl stop kubelet            # Остановка службы kubelet
+```
+
+### :arrow_forward: Работа в Service :arrow_backward:
+```bash
+$ kubectl get services              # Вывести все сервисы в пространстве имён
+```
+
+### :arrow_forward: Работа в Deployment :arrow_backward:
+```bash
+$ kubectl get deployment --all-namespaces                # Вывести все деплойменты
+$ kubectl scale deployment deployment_name --replicas=3  # Изменение количества реплик (подов) в развертывании (скеилить)
+$ kubectl rollout restart deployment <deployment_name>   # Перезапуск развертывания (deployment)
+```
+
+### :arrow_forward: Работа с Pods :arrow_backward:
+```bash
+$ kubectl get pod -n {namespace}              # Вывести все поды в конкретном неймспейсе
+$ kubectl get pods --all-namespaces           # Вывести все поды всех неймспейсов
+$ kubectl get pods --all-namespaces -o wide   # Вывести все поды всех неймспейсов очень подробно с ip-шниками
+$ kubectl get pods --all-namespaces -o yaml   # Вывести все поды всех неймспейсов в формате YAML
+$ kubectl describe pod -n {namespace} {pod}   # NAMESPACE, NAME POD  # Посмотреть подробную инфу о поде
+$ kubectl logs -n {namespace} {pod}           # NAMESPACE, NAME POD  # Посмотреть логи пода
+$ kubectl get pod -n {namespace} {pod} -o yaml                              # Получить информацию по поду в формате YAML
+$ kubectl get pods --field-selector=status.phase=Running --all-namespaces   # Посмотреть все запущенные поды во всех неймспейсах
+$ kubectl get pods -o wide --all-namespaces | grep {namespace}              # Вывести поды с привязкой к ноде
+$ kubectl port-forward -n {namespace} {pod} 8087:8080                       # Проброс портов пода себе на машину чтобы напрямую запросы в контейнер отсылать
+$ kubectl logs -f -n {namespace} {pod}                                      # Вывести логи пода
+$ kubectl logs -n {namespace} {pod} --since=3h > logs_3h.txt                # Выгрузить логи за последние 3 часа
+$ kubectl logs -f --previous -n {namespace} {pod} > logs.txt                # Выгрузить полные логи с поды с историей в отдельный файл
+$ kubectl get pods --all-namespaces -o json | jq '.items[] | .spec.nodeName' -r | sort | uniq -c                          # Посмотреть количество подов на каждой ноде
+$ kubectl get pod -n {namespace} {pod} --template='{{(index (index .spec.containers 0).ports 0).containerPort}}{{"\n"}}'  # Узнать порт Поды
+$ kubectl get events -n {namespace}    # Посмотреть лог почему падает и рестартится пода
+
+$ kubectl get pods --all-namespaces -o json | jq '.items | map({podName: .metadata.name, nodeName: .spec.nodeName}) | group_by(.nodeName) | map({nodeName: .[0].nodeName, pods: map(.podName)})'  # Вывести список всех подов для каждого узла в формате JSON
+$ kubectl get po --all-namespaces -o wide | grep 127.123.4.216   # Найти поду по айпишнику
+$ kubectl delete pod -n {namespace} {pod}                        # Удалить под, "произвести его рестарт" (удаление пода убивает нынешней под и сразу поднимает новый)
+```
+
+### :arrow_forward: Работа с Nodes :arrow_backward:
+```bash
+$ kubectl get nodes                # Вывести все ноды со статусами
+$ sudo systemctl restart kubelet   # Рестартануть ноду, в которой находимся
+$ kubectl describe nodes {noda1}   # Посмотреть подробную инфу о ноде
+$ kubectl get nodes --all-namespaces -o wide  # Вывести все ноды всех неймспейсов очень подробно с ip-шниками
+```
+
+### :arrow_forward: Работа с Namespaces :arrow_backward:
+```bash
+$ kubectl get namespace  # Вывести все неймспейсы
+```
+
+### :arrow_forward: Работа с Контейнерами :arrow_backward:
+```bash
+$ docker ps                # Показать запущенные контейнеры
+$ docker ps -a             # Показать все контейнеры
+$ docker logs {container}  # Показать логи контейнера
+$ docker exec -it {container} psql -U postgres    # Подключаемся к БД контейнер под пользователем Postgres
+$ kubectl logs -f -n {namespace} {pod}            # Вывести логи контейнера пода в режиме реального времени (в stdout, при работе с несколькими контейнерами)
+$ docker stats --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"  # Посмотреть какой контейнер что и как жрёт по CPU и RAM
+$ kubectl exec -n {namespace} -it {pod} -- ls /tmp                                      # Из кубера выполнить команду внутри контейнера пода
+$ watch -n 3 'docker stats --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" | grep {container} >> stats.txt'  # Мониторинг нагрузки контейнера
+```
+
+### :arrow_forward: Работа с Configmaps :arrow_backward:
+```bash
+$ kubectl get configmaps -A  # Посмотреть все конфигмапы
+$ kubectl get configmap -n {namespace} {pod} -o yaml  # Показать конфигмап конкретного пода в неймспейсе
+```
+
+### :arrow_forward: Работа с лейблами :arrow_backward:
+```bash
+$ kubectl logs -f -l name=myLabel --all-containers  # Вывести логи всех подов с меткой myLabel (в stdout)
+$ kubectl logs -l name=myLabel -c {container}       # Вывести логи пода с меткой myLabel (в stdout)
+```
+
+### :arrow_forward: РЕДКОЕ: :arrow_backward:
+```bash
+$ kubectl drain {node}     # Эвакуация подов с узла перед его удалением из кластера
+$ kubectl uncordon {node}  # Снятие запрета на планирование подов на узле
+$ kubectl cordon {node}    # Запрет планирования новых подов на узле
+```
