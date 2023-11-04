@@ -444,7 +444,8 @@ $ systemctl stop kubelet            # Остановка службы kubelet
 
 ### :arrow_forward: Работа в Service :arrow_backward:
 ```bash
-$ kubectl get services              # Вывести все сервисы в пространстве имён
+$ kubectl get services               # Вывести все сервисы в пространстве имён
+$ kubectl delete service zabbix-web  # Удалить сервис
 ```
 
 ### :arrow_forward: Работа в Deployment :arrow_backward:
