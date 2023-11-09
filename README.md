@@ -65,20 +65,24 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-deployment
+  name: nginx-deployment
+  labels:
+    app: nginx
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: my-app
+      app: nginx
   template:
     metadata:
       labels:
-        app: my-app
+        app: nginx
     spec:
       containers:
-        - name: my-container
-          image: nginx
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+            - containerPort: 80
 ```
 
 #                                                                | Service |
@@ -133,7 +137,7 @@ spec:
 
 #                                                                | StatefulSet |
 
-`StatefulSet` - это постоянное множество, которое предназначено для управления приложениями, которым необходимо иметь уникальные и постоянные идентификаторы, такие как базы данных.
+`StatefulSet` - это объект API рабочей нагрузки, который предназначен для управления приложениями, которым необходимо иметь уникальные и постоянные идентификаторы, такие как базы данных.
 Он обеспечивает гарантированное развертывание и запуск подов в определенном порядке и маркирует их для устойчивого хранения данных.
 
 > Пример файла StatefulSet YAML:
@@ -400,6 +404,105 @@ Helm Chart может быть развернут в Kubernetes с помощь�
 helm install myapp ./myapp-chart
 ```
 Это создаст релиз с именем `myapp`, используя `Helm Chart`, расположенный в директории `myapp-chart`.
+
+
+
+#                                                                | RBAC |
+
+## `Role-based access control(RBAC)` - это метод управления доступом вычислительными или сетевыми ресурсами k8s, основанных на ролях пользователей.
+В рамках RBAC используются:
+- ServiceAccount
+- Role
+- RoleBinding
+- ClusterRole
+- ClusterRoleBinding
+
+
+## `Service account` - пользователь для запуска Pod.
+
+> Пример файла Service account YAML:
+```yml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: build-robot
+automountServiceAccountToken: false
+```
+
+## `Role` - объект, который содержит набора правил доступа к ресурсам в указанном namespace.
+
+> Пример файла Role YAML:
+```yml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: pod-reader
+rules:
+  - apiGroups: [ "" ] # "" indicates the core API group
+    resources: [ "pods" ]
+    verbs: [ "get", "watch", "list" ]
+```
+
+## `ClusterRole` - схожий с `Role` объект, гарантирующий права ко всем объектам кластера, а не только в указанном namespace.
+
+> Пример файла ClusterRole YAML:
+```yml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: secret-reader
+rules:
+  - apiGroups: [ "" ]
+    # at the HTTP level, the name of the resource for accessing Secret
+    # objects is "secrets"
+    resources: [ "secrets" ]
+    verbs: [ "get", "watch", "list" ]
+```
+
+## `Role Binding` - гарантирует права, определенные в `Role` пользователю или списку пользователей в определенном namespace.
+
+> Пример файла Role Binding YAML:
+```yml
+apiVersion: rbac.authorization.k8s.io/v1
+# This role binding allows "jane" to read pods in the "default" namespace.
+# You need to already have a Role named "pod-reader" in that namespace.
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+  # You can specify more than one "subject"
+  - kind: User
+    name: jane # "name" is case sensitive
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  # "roleRef" specifies the binding to a Role / ClusterRole
+  kind: Role #this must be Role or ClusterRole
+  name: pod-reader # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+```
+
+## `ClusterRole binding` - гарантирует доступ ко любому ресурсу в кластере, в любом namespace.
+
+> Пример файла Role ClusterRole binding YAML:
+```yml
+apiVersion: rbac.authorization.k8s.io/v1
+# This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
+kind: ClusterRoleBinding
+metadata:
+  name: read-secrets-global
+subjects:
+  - kind: Group
+    name: manager # Name is case sensitive
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
 
 ---
 
