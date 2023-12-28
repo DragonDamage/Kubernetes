@@ -513,8 +513,10 @@ roleRef:
 
 ### :arrow_forward: Конфиги и остальное :arrow_backward:
 ```bash
-$ sudo su dockeradm        # Пользак у которого есть конфигурация кубера (~/.kube/config)
-$ kubectl config view      # Посмотреть объединённые настройки kubeconfig
+$ sudo su dockeradm          # Пользак у которого есть конфигурация кубера (~/.kube/config)
+$ kubectl cluster-info dump  # Посмотреть инфу по запущенному кластеру
+$ kubectl config view        # Посмотреть объединённые настройки kubeconfig
+$ minikube ssh               # Подключиться по ssh к куберу (возможный пароль от юзера docker 'tcuser')
 ```
 
 ### :triangular_flag_on_post: Глоссарий :triangular_flag_on_post:
